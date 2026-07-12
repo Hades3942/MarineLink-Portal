@@ -59,6 +59,8 @@ public class SecurityConfig {
                 // Reports viewer (REGULATOR + ADMIN)
                 .requestMatchers("/api/reports/viewer/**").hasAnyRole("REGULATOR", "ADMIN")
 
+
+
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )
