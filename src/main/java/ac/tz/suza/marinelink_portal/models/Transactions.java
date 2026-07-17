@@ -2,22 +2,34 @@ package ac.tz.suza.marinelink_portal.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
-@Entity
 @Data
+@Entity
+@Table(name = "transactions")
 public class Transactions {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long listingId;
-    private Long buyerId;
-    private Long fisherId;
+    @ManyToOne
+    @JoinColumn(name = "listing_id")
+    private Listing listing;
+
+    @ManyToOne
+    @JoinColumn(name = "buyer_id")
+    private User buyer;
+
+    @ManyToOne
+    @JoinColumn(name = "fisher_id")
+    private User fisher;
 
     private double totalPrice;
-    private String paymentStatus; // PAID, FAILED
 
-    private LocalDateTime timestamp;
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status;
+
+    private LocalDateTime date;
 }

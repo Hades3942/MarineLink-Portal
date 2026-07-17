@@ -1,46 +1,61 @@
 package ac.tz.suza.marinelink_portal.controllers;
 
-import ac.tz.suza.marinelink_portal.models.ComplianceReport;
-import ac.tz.suza.marinelink_portal.repositories.UserRepository;
-import ac.tz.suza.marinelink_portal.services.AdminDashboardService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import ac.tz.suza.marinelink_portal.models.User;
+import ac.tz.suza.marinelink_portal.services.AdminDashboardService;
 
 @RestController
 @RequestMapping("/api/admin/dashboard")
+@RequiredArgsConstructor
+@CrossOrigin
 public class AdminDashboardController {
 
-    private final AdminDashboardService dashboardService;
-    private final UserRepository userRepository;
-    
-    public AdminDashboardController(AdminDashboardService dashboardService,
-                                    UserRepository userRepository) {
-        this.dashboardService = dashboardService;
-        this.userRepository = userRepository; 
+    private final AdminDashboardService adminDashboardService;
+
+    // ============================
+    // DASHBOARD SUMMARY
+    // ============================
+    @GetMapping("/summary")
+    public ResponseEntity<?> getDashboardSummary() {
+        return ResponseEntity.ok(adminDashboardService.getDashboardSummary());
     }
 
     // ============================
-    // MAIN DASHBOARD SUMMARY
+    // ALL USERS (ADMIN PAGE)
     // ============================
-    @GetMapping("/summary")
-    public Map<String, Object> getSummary() {
-        return dashboardService.getDashboardSummary();
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(adminDashboardService.getAllUsers());
     }
 
     // ============================
     // COMPLIANCE REPORT HISTORY
     // ============================
     @GetMapping("/reports")
-    public Iterable<ComplianceReport> getReports() {
-        return dashboardService.getReportHistory();
+    public ResponseEntity<?> getReportHistory() {
+        return ResponseEntity.ok(adminDashboardService.getReportHistory());
     }
 
     // ============================
-    // VIEW ALL REGISTERED USERS
+    // UPDATE USER ROLE
     // ============================
-    @GetMapping("/users")
-    public Iterable<?> getAllUsers() {
-        return userRepository.findAll();
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable Long id,
+            @RequestBody User updatedUser) {
+        User Updated = adminDashboardService.updateUser(id, updatedUser);
+        return ResponseEntity.ok(Updated);
+    }
+
+    // ============================
+    // DELETE USER
+    // ============================
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        adminDashboardService.deleteUser(id);
+        return ResponseEntity.ok("User deleted successfully");
     }
 }

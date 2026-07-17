@@ -4,11 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import ac.tz.suza.marinelink_portal.Dto.LoginRequest;
+import ac.tz.suza.marinelink_portal.Dto.RegisterRequest;
 import ac.tz.suza.marinelink_portal.models.Role;
 import ac.tz.suza.marinelink_portal.models.User;
 import ac.tz.suza.marinelink_portal.repositories.UserRepository;
 import ac.tz.suza.marinelink_portal.security.JwtUtil;
 
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -18,40 +22,57 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    public ResponseEntity<?> register(User req) {
+    // ============================
+    // REGISTER USER
+    // ============================
+    public ResponseEntity<?> register(RegisterRequest req) {
 
         if (userRepository.findByEmail(req.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("Email already exists");
         }
 
-        req.setPassword(passwordEncoder.encode(req.getPassword()));
+        if (userRepository.findByUsername(req.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body("Username already exists");
+        }
+
+        User user = new User();
+        user.setZanzibarId(req.getZanzibarId());
+        user.setFullName(req.getFullName());
+        user.setUsername(req.getUsername());
+        user.setEmail(req.getEmail());
+        user.setPassword(passwordEncoder.encode(req.getPassword()));
 
         // Default role if not provided
-        if (req.getRole() == null) {
-            req.setRole(Role.FISHER);
-        }
+        Role role = (req.getRole() == null)
+                ? Role.FISHER
+                : Role.valueOf(req.getRole());
 
-        userRepository.save(req);
+        user.setRole(role);
 
-        return ResponseEntity.ok("Registration successful");
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
-    public ResponseEntity<?> login(String username, String password) {
+    // ============================
+    // LOGIN USER
+    // ============================
+    public Map<String, Object> login(LoginRequest req) {
 
-        var userOpt = userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(req.getUsername())
+                .orElseThrow(() -> new RuntimeException("Invalid username"));
 
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid username");
-        }
-
-        var user = userOpt.get();
-
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            return ResponseEntity.badRequest().body("Invalid password");
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid password");
         }
 
         String token = jwtUtil.generateToken(user);
 
-        return ResponseEntity.ok(token);
+        return Map.of(
+                "token", token,
+                "role", user.getRole().name(),
+                "userId", user.getId(),
+                "username", user.getUsername()
+        );
     }
 }
